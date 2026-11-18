@@ -1,0 +1,434 @@
+/* ══════════════════════════════════════════════════════
+   PEPPY COLLECTIONS – COURIER SLIP GENERATOR
+   style.css
+   ══════════════════════════════════════════════════════ */
+
+/* ── RESET & BASE ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:        #1a6fdb;
+  --blue-dark:   #1358b0;
+  --blue-light:  #e8f0fb;
+  --green:       #2a9d4f;
+  --green-dark:  #1e7a3c;
+  --teal:        #0891b2;
+  --teal-dark:   #0670a0;
+  --amber:       #c97d10;
+  --amber-dark:  #a86309;
+  --red:         #d93025;
+  --red-dark:    #b02018;
+  --grey-50:     #f8f9fa;
+  --grey-100:    #f1f3f5;
+  --grey-200:    #e9ecef;
+  --grey-300:    #dee2e6;
+  --grey-500:    #adb5bd;
+  --grey-700:    #495057;
+  --grey-900:    #212529;
+  --radius:      8px;
+  --shadow:      0 2px 8px rgba(0,0,0,.1);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,.14);
+  --transition:  .18s ease;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--grey-100);
+  color: var(--grey-900);
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+.site-header {
+  background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
+  color: #fff;
+  padding: 20px 0;
+  box-shadow: 0 3px 12px rgba(0,0,0,.2);
+}
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-logo { font-size: 2.4rem; line-height: 1; }
+.header-text h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: .3px; }
+.header-text .subtitle { font-size: .9rem; opacity: .82; margin-top: 2px; }
+
+/* ── CONTAINER ──────────────────────────────────────── */
+.container {
+  max-width: 900px;
+  margin: 28px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ── CARDS ──────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--grey-200);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--grey-50);
+  border-bottom: 1px solid var(--grey-200);
+  flex-wrap: wrap;
+}
+.card-header h2 { font-size: 1.05rem; font-weight: 700; color: var(--grey-900); }
+.card-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── FROM DISPLAY ───────────────────────────────────── */
+.from-display {
+  padding: 18px 20px;
+}
+.from-lines {
+  font-size: .97rem;
+  line-height: 1.8;
+  color: var(--grey-700);
+}
+.from-lines strong { color: var(--grey-900); font-size: 1.05rem; }
+
+/* ── FROM EDIT ──────────────────────────────────────── */
+.from-edit { padding: 18px 20px; }
+.from-edit-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+/* ── FORM GRID ──────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px 20px;
+}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.full { grid-column: 1 / -1; }
+label { font-size: .84rem; font-weight: 600; color: var(--grey-700); }
+.req { color: var(--red); }
+input[type="text"], input[type="tel"], textarea {
+  padding: 9px 12px;
+  border: 1.5px solid var(--grey-300);
+  border-radius: 6px;
+  font-size: .95rem;
+  font-family: inherit;
+  color: var(--grey-900);
+  background: #fff;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  resize: vertical;
+}
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26,111,219,.12);
+}
+input::placeholder, textarea::placeholder { color: var(--grey-500); }
+
+/* ── BADGE ──────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: var(--blue-light);
+  color: var(--blue-dark);
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+/* ── TABLE ──────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+thead { background: var(--blue); color: #fff; }
+th { padding: 11px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--grey-200); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--grey-50); }
+.empty-state { text-align: center; color: var(--grey-500); padding: 30px 0 !important; font-style: italic; }
+.td-addr { max-width: 220px; word-break: break-word; white-space: pre-wrap; }
+
+/* ── BUTTONS ────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: .9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition), transform .1s, box-shadow var(--transition);
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn-sm { padding: 6px 12px; font-size: .82rem; }
+
+.btn-primary  { background: var(--blue);     color: #fff; }
+.btn-primary:hover  { background: var(--blue-dark); box-shadow: 0 2px 8px rgba(26,111,219,.35); }
+
+.btn-success  { background: var(--green);    color: #fff; }
+.btn-success:hover  { background: var(--green-dark); box-shadow: 0 2px 8px rgba(42,157,79,.35); }
+
+.btn-info     { background: var(--teal);     color: #fff; }
+.btn-info:hover     { background: var(--teal-dark); box-shadow: 0 2px 8px rgba(8,145,178,.35); }
+
+.btn-warning  { background: var(--amber);    color: #fff; }
+.btn-warning:hover  { background: var(--amber-dark); box-shadow: 0 2px 8px rgba(201,125,16,.35); }
+
+.btn-danger   { background: var(--red);      color: #fff; }
+.btn-danger:hover   { background: var(--red-dark); box-shadow: 0 2px 8px rgba(217,48,37,.35); }
+
+.btn-secondary { background: var(--grey-200); color: var(--grey-900); border: 1px solid var(--grey-300); }
+.btn-secondary:hover { background: var(--grey-300); }
+
+.btn-ghost    { background: transparent; color: var(--grey-700); border: 1.5px solid var(--grey-300); }
+.btn-ghost:hover    { background: var(--grey-100); }
+
+.btn-icon { padding: 6px 10px; border-radius: 5px; font-size: .82rem; }
+
+/* ── ADD / ACTION ROWS ──────────────────────────────── */
+.add-actions   { padding: 0 20px 18px; display: flex; gap: 10px; }
+.action-card .card-header { border-bottom: none; }
+.action-buttons {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.btn-action { flex: 1 1 160px; justify-content: center; padding: 12px 10px; }
+
+/* ── ERROR MESSAGES ─────────────────────────────────── */
+.error-msg {
+  margin: 8px 20px 0;
+  padding: 9px 14px;
+  background: #fde8e8;
+  border: 1px solid #f5c6c6;
+  border-radius: 6px;
+  color: var(--red-dark);
+  font-size: .88rem;
+  font-weight: 600;
+}
+
+/* ── MODAL ──────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal-box {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 540px;
+  overflow: hidden;
+}
+.modal-box h3 {
+  padding: 16px 20px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.modal-actions {
+  padding: 14px 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--grey-200);
+}
+
+/* ── PREVIEW SECTION ────────────────────────────────── */
+#preview-section {
+  background: var(--grey-200);
+  min-height: 100vh;
+}
+.preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 2px solid var(--blue);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.preview-info span { font-weight: 700; color: var(--blue-dark); font-size: 1.05rem; }
+.preview-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════════════
+   A4 PAGE & SLIP STYLES  (screen + print)
+   ═══════════════════════════════════════════════════════ */
+#print-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0 50px;
+  gap: 30px;
+}
+
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  padding: 12mm 12mm;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  page-break-after: always;
+  break-after: page;
+}
+
+/* Each slip takes exactly 1/3 of usable A4 height */
+.slip {
+  flex: 1;
+  display: flex;
+  border: 1.5px solid #333;
+  overflow: hidden;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Divider between slips (but NOT after last slip) */
+.slip + .slip {
+  border-top: none; /* share border with previous slip's bottom */
+}
+
+.slip-half {
+  flex: 1;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.slip-from {
+  border-right: 1.5px solid #333;
+}
+
+.slip-label {
+  font-size: 9pt;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #333;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.slip-business {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.3;
+}
+
+.slip-contact {
+  font-size: 9.5pt;
+  color: #333;
+}
+
+.slip-addr {
+  font-size: 9.5pt;
+  color: #333;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.slip-mobile {
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #111;
+  margin-top: 4px;
+}
+
+/* TO side extras */
+.slip-to .slip-business {
+  font-size: 12pt;
+}
+
+/* Barcode placeholder (optional visual decoration) */
+.slip-barcode {
+  margin-top: auto;
+  align-self: flex-end;
+  font-size: 7pt;
+  color: #aaa;
+  letter-spacing: 2px;
+  font-family: monospace;
+}
+
+/* ── UTILITY ─────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════
+   PRINT MEDIA
+   ═══════════════════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  /* Hide everything except print area */
+  body > * { display: none !important; }
+  #preview-section { display: block !important; }
+  .preview-toolbar { display: none !important; }
+  #print-area { display: flex !important; padding: 0 !important; gap: 0 !important; align-items: stretch !important; }
+
+  .a4-page {
+    width: 100%;
+    min-height: 0;
+    height: calc(297mm - 24mm); /* full A4 minus @page margins */
+    box-shadow: none;
+    padding: 0;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .slip {
+    border: 1.5px solid #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Last page should not force blank page */
+  .a4-page:last-child { page-break-after: auto; break-after: auto; }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────── */
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .field.full { grid-column: 1; }
+  .header-text h1 { font-size: 1.1rem; }
+  .a4-page { width: 95vw; }
+  .action-buttons { flex-direction: column; }
+  .btn-action { flex: unset; }
+}
