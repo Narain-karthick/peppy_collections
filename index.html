@@ -24,143 +24,155 @@
   </header>
 
   <!-- ═══════════════════════════════════════
-       MAIN CONTENT
+       MAIN TWO-COLUMN DASHBOARD
   ════════════════════════════════════════ -->
-  <main class="container no-print">
+  <main class="dashboard">
 
-    <!-- ─── A. FROM ADDRESS CARD ─── -->
-    <section class="card" id="from-card">
-      <div class="card-header">
-        <h2>📍 Default FROM Address</h2>
-        <div class="card-header-actions">
-          <button class="btn btn-secondary btn-sm" id="btn-edit-from">✏️ Edit Address</button>
-          <button class="btn btn-ghost btn-sm" id="btn-reset-from" title="Reset to factory default">↩ Reset</button>
+    <!-- ─── LEFT COLUMN – 40% WIDTH (ENTRY SECTION) ─── -->
+    <div class="left-col no-print">
+
+      <!-- 1. Default FROM Address -->
+      <section class="card" id="from-card">
+        <div class="card-header">
+          <h2>📍 Default FROM Address</h2>
+          <div class="card-header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-edit-from">✏️ Edit Address</button>
+            <button class="btn btn-ghost btn-sm" id="btn-reset-from" title="Reset to factory default">↩ Reset</button>
+          </div>
         </div>
-      </div>
 
-      <!-- Display mode -->
-      <div id="from-display" class="from-display">
-        <div class="from-lines" id="from-lines-display"></div>
-      </div>
+        <!-- Display mode -->
+        <div id="from-display" class="from-display">
+          <div class="from-lines" id="from-lines-display"></div>
+        </div>
 
-      <!-- Edit mode -->
-      <div id="from-edit" class="from-edit hidden">
+        <!-- Edit mode -->
+        <div id="from-edit" class="from-edit hidden">
+          <div class="form-grid">
+            <div class="field">
+              <label for="from-business">Business / Sender Name <span class="req">*</span></label>
+              <input type="text" id="from-business" placeholder="e.g. Peppy Collections" />
+            </div>
+            <div class="field">
+              <label for="from-contact">Contact Person <span class="req">*</span></label>
+              <input type="text" id="from-contact" placeholder="e.g. Yamini Mamallan" />
+            </div>
+            <div class="field full">
+              <label for="from-address">Address <span class="req">*</span></label>
+              <textarea id="from-address" rows="2" placeholder="e.g. Ponneri – 601204"></textarea>
+            </div>
+            <div class="field full">
+              <label for="from-mobile">Mobile Number <span class="req">*</span></label>
+              <input type="tel" id="from-mobile" placeholder="10-digit mobile number" maxlength="10" />
+            </div>
+          </div>
+          <div class="from-edit-actions">
+            <button class="btn btn-primary" id="btn-save-from">💾 Save Default Address</button>
+            <button class="btn btn-ghost" id="btn-cancel-from">✕ Cancel</button>
+          </div>
+          <div id="from-error" class="error-msg hidden"></div>
+        </div>
+      </section>
+
+      <!-- 2. Add Recipient Address -->
+      <section class="card" id="add-card">
+        <div class="card-header">
+          <h2>➕ Add Recipient Address</h2>
+        </div>
         <div class="form-grid">
           <div class="field">
-            <label for="from-business">Business / Sender Name <span class="req">*</span></label>
-            <input type="text" id="from-business" placeholder="e.g. Peppy Collections" />
+            <label for="to-name">Recipient Name <span class="req">*</span></label>
+            <input type="text" id="to-name" placeholder="Full name of recipient" />
           </div>
           <div class="field">
-            <label for="from-contact">Contact Person <span class="req">*</span></label>
-            <input type="text" id="from-contact" placeholder="e.g. Yamini Mamallan" />
+            <label for="to-mobile">Mobile Number <span class="req">*</span></label>
+            <input type="tel" id="to-mobile" placeholder="10-digit mobile number" maxlength="10" />
           </div>
           <div class="field full">
-            <label for="from-address">Address <span class="req">*</span></label>
-            <textarea id="from-address" rows="2" placeholder="e.g. Ponneri – 601204"></textarea>
-          </div>
-          <div class="field">
-            <label for="from-mobile">Mobile Number <span class="req">*</span></label>
-            <input type="tel" id="from-mobile" placeholder="10-digit mobile number" maxlength="10" />
+            <label for="to-address">Address <span class="req">*</span></label>
+            <textarea id="to-address" rows="2" placeholder="Complete delivery address with pincode"></textarea>
           </div>
         </div>
-        <div class="from-edit-actions">
-          <button class="btn btn-primary" id="btn-save-from">💾 Save Default Address</button>
-          <button class="btn btn-ghost" id="btn-cancel-from">✕ Cancel</button>
+        <div id="add-error" class="error-msg hidden"></div>
+        <div class="add-actions">
+          <button class="btn btn-primary" id="btn-add">✚ Add Address</button>
         </div>
-        <div id="from-error" class="error-msg hidden"></div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ─── B. ADD RECIPIENT CARD ─── -->
-    <section class="card" id="add-card">
-      <div class="card-header">
-        <h2>➕ Add Recipient Address</h2>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label for="to-name">Recipient Name <span class="req">*</span></label>
-          <input type="text" id="to-name" placeholder="Full name of recipient" />
+      <!-- 3. Recipient List -->
+      <section class="card" id="list-card">
+        <div class="card-header">
+          <h2>📋 Recipient List</h2>
+          <span class="badge" id="recipient-count">0 recipients</span>
         </div>
-        <div class="field">
-          <label for="to-mobile">Mobile Number <span class="req">*</span></label>
-          <input type="tel" id="to-mobile" placeholder="10-digit mobile number" maxlength="10" />
+        <div class="table-wrap">
+          <table id="recipient-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Recipient Name</th>
+                <th>Address</th>
+                <th>Mobile</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recipient-tbody">
+              <tr id="empty-row">
+                <td colspan="5" class="empty-state">No recipients added yet. Use the form above to add addresses.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="field full">
-          <label for="to-address">Address <span class="req">*</span></label>
-          <textarea id="to-address" rows="2" placeholder="Complete delivery address with pincode"></textarea>
-        </div>
-      </div>
-      <div id="add-error" class="error-msg hidden"></div>
-      <div class="add-actions">
-        <button class="btn btn-primary" id="btn-add">✚ Add Address</button>
-      </div>
-    </section>
+      </section>
 
-    <!-- ─── C. RECIPIENT LIST CARD ─── -->
-    <section class="card" id="list-card">
-      <div class="card-header">
-        <h2>📋 Recipient List</h2>
-        <span class="badge" id="recipient-count">0 recipients</span>
-      </div>
-      <div class="table-wrap">
-        <table id="recipient-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Recipient Name</th>
-              <th>Address</th>
-              <th>Mobile</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="recipient-tbody">
-            <tr id="empty-row">
-              <td colspan="5" class="empty-state">No recipients added yet. Use the form above to add addresses.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    </div><!-- /.left-col -->
 
-    <!-- ─── D. ACTION BUTTONS ─── -->
-    <section class="card action-card" id="action-card">
-      <div class="card-header">
-        <h2>⚙️ Actions</h2>
-      </div>
-      <div class="action-buttons">
-        <button class="btn btn-primary btn-action" id="btn-preview">👁 Generate Preview</button>
-        <button class="btn btn-success btn-action" id="btn-print">🖨️ Print</button>
-        <button class="btn btn-info btn-action" id="btn-pdf">📄 Download PDF</button>
-        <button class="btn btn-warning btn-action" id="btn-docx">📝 Download Word (.docx)</button>
-        <button class="btn btn-danger btn-action" id="btn-clear">🗑️ Clear All Recipients</button>
-      </div>
-    </section>
+    <!-- ─── RIGHT COLUMN – 60% WIDTH (PREVIEW AND ACTIONS) ─── -->
+    <div class="right-col">
+
+      <!-- 1. Actions -->
+      <section class="card action-card no-print" id="action-card">
+        <div class="card-header">
+          <h2>⚙️ Actions</h2>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary btn-action" id="btn-preview">👁 Generate Preview</button>
+          <button class="btn btn-success btn-action" id="btn-print">🖨️ Print</button>
+          <button class="btn btn-info btn-action" id="btn-pdf">📄 Download PDF</button>
+          <button class="btn btn-warning btn-action" id="btn-docx">📝 Download Word (.docx)</button>
+          <button class="btn btn-danger btn-action" id="btn-clear">🗑️ Clear All Recipients</button>
+        </div>
+      </section>
+
+      <!-- 2. Courier Slip Preview -->
+      <section class="card preview-card" id="preview-card">
+        <div class="card-header preview-card-header no-print">
+          <h2>🖨️ Courier Slip Preview</h2>
+          <div class="preview-header-info">
+            <span class="badge" id="preview-page-indicator">0 Pages</span>
+          </div>
+        </div>
+
+        <div class="preview-scroll-container" id="preview-scroll-container">
+          <!-- A4 pages injected here by JS -->
+          <div id="print-area">
+            <div class="preview-placeholder" id="preview-placeholder">
+              <div class="placeholder-icon">📄</div>
+              <h3>No Preview Generated Yet</h3>
+              <p>Add recipient addresses on the left, then click <strong>Generate Preview</strong> to see the A4 slips.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.right-col -->
 
   </main>
 
   <!-- ═══════════════════════════════════════
-       PREVIEW SECTION (screen + print)
-  ════════════════════════════════════════ -->
-  <section id="preview-section" class="hidden">
-    <div class="preview-toolbar no-print">
-      <div class="preview-info">
-        <span id="preview-label">Preview</span>
-      </div>
-      <div class="preview-actions">
-        <button class="btn btn-success" id="btn-print2">🖨️ Print</button>
-        <button class="btn btn-info"    id="btn-pdf2">📄 Download PDF</button>
-        <button class="btn btn-warning" id="btn-docx2">📝 Download Word</button>
-        <button class="btn btn-ghost"   id="btn-close-preview">✕ Close Preview</button>
-      </div>
-    </div>
-    <!-- A4 pages injected here by JS -->
-    <div id="print-area"></div>
-  </section>
-
-  <!-- ═══════════════════════════════════════
        INLINE EDIT MODAL
   ════════════════════════════════════════ -->
-  <div id="edit-modal" class="modal-overlay hidden">
+  <div id="edit-modal" class="modal-overlay hidden no-print">
     <div class="modal-box">
       <h3>Edit Recipient</h3>
       <div class="form-grid">

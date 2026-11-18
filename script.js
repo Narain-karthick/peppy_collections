@@ -17,10 +17,11 @@ const DEFAULT_FROM = {
 
 const LS_FROM_KEY       = 'peppyCollections_fromAddress';
 const LS_RECIPIENTS_KEY = 'peppyCollections_recipients';
+const SLIPS_PER_PAGE    = 3;
 
 let fromAddress  = loadFromAddress();
 let recipients   = loadRecipients();
-let editingIndex = null;        // index of recipient being edited
+let editingIndex = null; // index of recipient being edited
 
 /* ══════════════════════════════════════════════════════
    LOCAL STORAGE HELPERS
@@ -29,7 +30,9 @@ function loadFromAddress() {
   try {
     const stored = localStorage.getItem(LS_FROM_KEY);
     return stored ? JSON.parse(stored) : { ...DEFAULT_FROM };
-  } catch { return { ...DEFAULT_FROM }; }
+  } catch {
+    return { ...DEFAULT_FROM };
+  }
 }
 
 function saveFromAddress(addr) {
@@ -40,7 +43,9 @@ function loadRecipients() {
   try {
     const stored = localStorage.getItem(LS_RECIPIENTS_KEY);
     return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function saveRecipients() {
@@ -65,7 +70,7 @@ function clearError(el) {
 }
 
 /* ══════════════════════════════════════════════════════
-   FROM ADDRESS – DISPLAY
+   FROM ADDRESS – DISPLAY & EDIT
    ══════════════════════════════════════════════════════ */
 function renderFromDisplay() {
   const el = document.getElementById('from-lines-display');
@@ -77,9 +82,6 @@ function renderFromDisplay() {
   `;
 }
 
-/* ══════════════════════════════════════════════════════
-   FROM ADDRESS – EDIT PANEL
-   ══════════════════════════════════════════════════════ */
 function openFromEdit() {
   document.getElementById('from-display').classList.add('hidden');
   document.getElementById('from-edit').classList.remove('hidden');
@@ -113,6 +115,11 @@ function saveFromEdit() {
   saveFromAddress(fromAddress);
   renderFromDisplay();
   closeFromEdit();
+
+  // If preview is visible, update it with new sender info
+  if (recipients.length > 0) {
+    buildPrintPages();
+  }
 }
 
 function resetFromAddress() {
@@ -121,6 +128,10 @@ function resetFromAddress() {
   saveFromAddress(fromAddress);
   renderFromDisplay();
   closeFromEdit();
+
+  if (recipients.length > 0) {
+    buildPrintPages();
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -131,12 +142,13 @@ function renderRecipientTable() {
   const countEl  = document.getElementById('recipient-count');
   const emptyRow = document.getElementById('empty-row');
 
-  // Remove all rows except the empty-state template
+  // Remove existing rendered rows
   [...tbody.querySelectorAll('tr:not(#empty-row)')].forEach(r => r.remove());
 
   if (recipients.length === 0) {
     emptyRow.classList.remove('hidden');
     countEl.textContent = '0 recipients';
+    renderEmptyPreview();
     return;
   }
 
@@ -152,17 +164,20 @@ function renderRecipientTable() {
       <td>${esc(r.mobile)}</td>
       <td>
         <button class="btn btn-secondary btn-icon btn-edit-row" data-idx="${i}" title="Edit">✏️</button>
-        <button class="btn btn-danger    btn-icon btn-del-row"  data-idx="${i}" title="Delete">🗑️</button>
+        <button class="btn btn-danger btn-icon btn-del-row" data-idx="${i}" title="Delete">🗑️</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Attach row-level listeners
+  // Attach row event listeners
   tbody.querySelectorAll('.btn-edit-row').forEach(btn =>
     btn.addEventListener('click', () => openEditModal(+btn.dataset.idx)));
   tbody.querySelectorAll('.btn-del-row').forEach(btn =>
     btn.addEventListener('click', () => deleteRecipient(+btn.dataset.idx)));
+
+  // Synchronize live preview
+  buildPrintPages();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -175,9 +190,9 @@ function addRecipient() {
   const mobile  = document.getElementById('to-mobile').value.trim();
 
   if (!name)    return showError(errEl, 'Recipient Name is required.');
-  if (!address) return showError(errEl, 'Address is required.');
   if (!mobile)  return showError(errEl, 'Mobile Number is required.');
   if (!isValidMobile(mobile)) return showError(errEl, 'Enter a valid 10-digit Indian mobile number starting with 6-9.');
+  if (!address) return showError(errEl, 'Address is required.');
 
   clearError(errEl);
   recipients.push({ name, address, mobile });
@@ -216,9 +231,9 @@ function saveEditModal() {
   const mobile  = document.getElementById('edit-mobile').value.trim();
 
   if (!name)    return showError(errEl, 'Recipient Name is required.');
-  if (!address) return showError(errEl, 'Address is required.');
   if (!mobile)  return showError(errEl, 'Mobile Number is required.');
   if (!isValidMobile(mobile)) return showError(errEl, 'Enter a valid 10-digit Indian mobile number starting with 6-9.');
+  if (!address) return showError(errEl, 'Address is required.');
 
   clearError(errEl);
   recipients[editingIndex] = { name, address, mobile };
@@ -238,7 +253,7 @@ function deleteRecipient(idx) {
 }
 
 /* ══════════════════════════════════════════════════════
-   CLEAR ALL
+   CLEAR ALL RECIPIENTS
    ══════════════════════════════════════════════════════ */
 function clearAllRecipients() {
   if (recipients.length === 0) return alert('No recipients to clear.');
@@ -246,7 +261,6 @@ function clearAllRecipients() {
   recipients = [];
   saveRecipients();
   renderRecipientTable();
-  hidePreview();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -272,114 +286,174 @@ function buildSlipHTML(toRecipient) {
   `;
 }
 
+function buildEmptySlipHTML(slotNum) {
+  return `
+    <div class="slip slip-empty">
+      <div class="empty-slip-content">(Empty Slip ${slotNum})</div>
+    </div>
+  `;
+}
+
 /* ══════════════════════════════════════════════════════
-   BUILD A4 PAGES
+   BUILD A4 PAGES (STRICT PAGINATION: 3 SLIPS PER A4 PAGE)
    ══════════════════════════════════════════════════════ */
 function buildPrintPages() {
-  const SLIPS_PER_PAGE = 3;
   const printArea = document.getElementById('print-area');
+  const indicatorEl = document.getElementById('preview-page-indicator');
+
+  if (recipients.length === 0) {
+    renderEmptyPreview();
+    return;
+  }
+
   printArea.innerHTML = '';
 
+  /* STRICT PAGINATION REQUIREMENT:
+     pageIndex = Math.floor(index / 3)
+     slipIndex = index % 3
+     Each A4 page contains max 3 slips.
+     4th recipient starts on Page 2, 7th on Page 3, 10th on Page 4.
+  */
   const totalPages = Math.ceil(recipients.length / SLIPS_PER_PAGE);
+
+  // Group recipients by pageIndex
+  const pageMap = {};
+  recipients.forEach((recipient, index) => {
+    const pageIndex = Math.floor(index / SLIPS_PER_PAGE);
+    const slipIndex = index % SLIPS_PER_PAGE;
+    if (!pageMap[pageIndex]) {
+      pageMap[pageIndex] = {};
+    }
+    pageMap[pageIndex][slipIndex] = recipient;
+  });
 
   for (let p = 0; p < totalPages; p++) {
     const pageDiv = document.createElement('div');
     pageDiv.className = 'a4-page';
+    pageDiv.setAttribute('data-page-index', p);
 
-    const startIdx = p * SLIPS_PER_PAGE;
-    const pageRecipients = recipients.slice(startIdx, startIdx + SLIPS_PER_PAGE);
+    const startSlip = p * SLIPS_PER_PAGE + 1;
+    const endSlip   = Math.min((p + 1) * SLIPS_PER_PAGE, recipients.length);
 
-    // Fill up to 3 slips; if fewer, add blank spacer slips to maintain layout
-    pageRecipients.forEach(r => {
-      pageDiv.insertAdjacentHTML('beforeend', buildSlipHTML(r));
-    });
+    // Screen-only page indicator header
+    const pageHeader = document.createElement('div');
+    pageHeader.className = 'a4-page-header no-print';
+    pageHeader.innerHTML = `
+      <span class="page-pill">📄 A4 Page ${p + 1} of ${totalPages}</span>
+      <span class="page-sub">Recipient ${startSlip}${endSlip > startSlip ? ` to ${endSlip}` : ''}</span>
+    `;
+    pageDiv.appendChild(pageHeader);
 
-    // Add blank filler slips if page is not full (keeps spacing on partial pages)
-    for (let f = pageRecipients.length; f < SLIPS_PER_PAGE; f++) {
-      pageDiv.insertAdjacentHTML('beforeend', `<div class="slip" style="border-style:dashed;opacity:.3;"></div>`);
+    // Slips container
+    const slipsContainer = document.createElement('div');
+    slipsContainer.className = 'a4-slips-container';
+
+    // Exactly 3 slips per page
+    for (let s = 0; s < SLIPS_PER_PAGE; s++) {
+      const recipient = pageMap[p] && pageMap[p][s];
+      if (recipient) {
+        slipsContainer.insertAdjacentHTML('beforeend', buildSlipHTML(recipient));
+      } else {
+        // Blank filler slip on partial page (maintains strict 1/3 height proportions)
+        slipsContainer.insertAdjacentHTML('beforeend', buildEmptySlipHTML(s + 1));
+      }
     }
 
+    pageDiv.appendChild(slipsContainer);
     printArea.appendChild(pageDiv);
   }
 
-  // Label
-  const totalRecips = recipients.length;
-  document.getElementById('preview-label').textContent =
-    `Preview — ${totalRecips} recipient${totalRecips !== 1 ? 's' : ''} · ${totalPages} A4 page${totalPages !== 1 ? 's' : ''}`;
+  // Update card header indicator
+  if (indicatorEl) {
+    indicatorEl.textContent = `${totalPages} Page${totalPages > 1 ? 's' : ''} (${recipients.length} Recipient${recipients.length !== 1 ? 's' : ''})`;
+  }
+}
+
+function renderEmptyPreview() {
+  const printArea   = document.getElementById('print-area');
+  const indicatorEl = document.getElementById('preview-page-indicator');
+  if (printArea) {
+    printArea.innerHTML = `
+      <div class="preview-placeholder" id="preview-placeholder">
+        <div class="placeholder-icon">📄</div>
+        <h3>No Preview Generated Yet</h3>
+        <p>Add recipient addresses on the left, then click <strong>Generate Preview</strong> to see the A4 slips.</p>
+      </div>
+    `;
+  }
+  if (indicatorEl) {
+    indicatorEl.textContent = '0 Pages';
+  }
 }
 
 /* ══════════════════════════════════════════════════════
-   PREVIEW SHOW / HIDE
+   PREVIEW TRIGGER
    ══════════════════════════════════════════════════════ */
-function showPreview() {
-  if (recipients.length === 0) return alert('Add at least one recipient before generating a preview.');
+function handleGeneratePreview() {
+  if (recipients.length === 0) {
+    return alert('Please add at least one recipient address before generating a preview.');
+  }
   buildPrintPages();
-  document.getElementById('preview-section').classList.remove('hidden');
-  document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-function hidePreview() {
-  document.getElementById('preview-section').classList.add('hidden');
-  document.getElementById('print-area').innerHTML = '';
+  const scrollContainer = document.getElementById('preview-scroll-container');
+  if (scrollContainer) {
+    scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 /* ══════════════════════════════════════════════════════
-   PRINT / PDF
+   PRINT & PDF EXPORT
    ══════════════════════════════════════════════════════ */
 function doPrint() {
-  if (recipients.length === 0) return alert('Add at least one recipient before printing.');
-  if (document.getElementById('preview-section').classList.contains('hidden')) {
-    buildPrintPages();
-    document.getElementById('preview-section').classList.remove('hidden');
+  if (recipients.length === 0) {
+    return alert('Please add at least one recipient before printing.');
   }
-  setTimeout(() => window.print(), 200);
+  buildPrintPages();
+  setTimeout(() => {
+    window.print();
+  }, 200);
 }
 
 /* ══════════════════════════════════════════════════════
    WORD (.docx) EXPORT
    ══════════════════════════════════════════════════════ */
 function downloadDocx() {
-  if (recipients.length === 0) return alert('Add at least one recipient before downloading.');
+  if (recipients.length === 0) {
+    return alert('Please add at least one recipient before downloading.');
+  }
 
-  // Check docx library
   if (typeof docx === 'undefined') {
-    return alert('Word export library is loading. Please ensure you have an internet connection and try again in a moment.');
+    return alert('Word export library is still loading. Please check your internet connection and try again in a moment.');
   }
 
   const {
     Document, Packer, Paragraph, Table, TableRow, TableCell,
-    TextRun, WidthType, BorderStyle, AlignmentType,
-    ShadingType, HeightRule, PageBreak, VerticalAlign
+    TextRun, WidthType, BorderStyle, HeightRule, PageBreak, VerticalAlign
   } = docx;
 
-  const SLIPS_PER_PAGE = 3;
-  const A4_WIDTH_DXA   = 11906;   // A4 portrait in twips
-  const MARGIN_DXA     = 1134;    // ~20 mm
-  const CONTENT_WIDTH  = A4_WIDTH_DXA - 2 * MARGIN_DXA; // usable width
-  const HALF_WIDTH     = Math.floor(CONTENT_WIDTH / 2);
+  const A4_WIDTH_DXA  = 11906; // A4 portrait width in twips (210mm)
+  const MARGIN_DXA    = 1000;  // Page margin
+  const CONTENT_WIDTH = A4_WIDTH_DXA - (2 * MARGIN_DXA);
+  const HALF_WIDTH    = Math.floor(CONTENT_WIDTH / 2);
 
-  const BORDER = { style: BorderStyle.SINGLE, size: 10, color: '333333' };
-  const DIVIDER = { style: BorderStyle.SINGLE, size: 10, color: '333333' };
+  const BORDER    = { style: BorderStyle.SINGLE, size: 8, color: '222222' };
+  const DIVIDER   = { style: BorderStyle.SINGLE, size: 8, color: '222222' };
   const NO_BORDER = { style: BorderStyle.NIL };
 
-  /* Helper: bold run */
-  const bold = (text, sz = 20) => new TextRun({ text, bold: true, size: sz });
-  const reg  = (text, sz = 19) => new TextRun({ text, size: sz });
-  const br   = ()               => new TextRun({ break: 1 });
+  const bold = (text, sz = 20) => new TextRun({ text, bold: true, size: sz, font: 'Calibri' });
+  const reg  = (text, sz = 19) => new TextRun({ text, size: sz, font: 'Calibri' });
 
-  /* Build a single slip table */
   function makeSlipTable(recipient) {
     const fromParas = [
-      new Paragraph({ children: [bold('FROM', 18)], spacing: { after: 60 } }),
-      new Paragraph({ children: [bold(fromAddress.business, 22)], spacing: { after: 40 } }),
+      new Paragraph({ children: [bold('FROM', 18)], spacing: { after: 50 } }),
+      new Paragraph({ children: [bold(fromAddress.business, 22)], spacing: { after: 30 } }),
       new Paragraph({ children: [reg(fromAddress.contact, 19)], spacing: { after: 20 } }),
       new Paragraph({ children: [reg(fromAddress.address, 19)], spacing: { after: 20 } }),
       new Paragraph({ children: [bold('Mobile: ' + fromAddress.mobile, 19)] }),
     ];
 
     const toParas = recipient ? [
-      new Paragraph({ children: [bold('TO', 18)], spacing: { after: 60 } }),
-      new Paragraph({ children: [bold(recipient.name, 24)], spacing: { after: 40 } }),
+      new Paragraph({ children: [bold('TO', 18)], spacing: { after: 50 } }),
+      new Paragraph({ children: [bold(recipient.name, 23)], spacing: { after: 30 } }),
       new Paragraph({ children: [reg(recipient.address, 19)], spacing: { after: 20 } }),
       new Paragraph({ children: [bold('Mobile: ' + recipient.mobile, 19)] }),
     ] : [
@@ -398,18 +472,18 @@ function downloadDocx() {
       },
       rows: [
         new TableRow({
-          height: { value: 1700, rule: HeightRule.ATLEAST },
+          height: { value: 1750, rule: HeightRule.ATLEAST },
           children: [
             new TableCell({
               width: { size: HALF_WIDTH, type: WidthType.DXA },
               verticalAlign: VerticalAlign.TOP,
-              margins: { top: 100, bottom: 100, left: 140, right: 140 },
+              margins: { top: 120, bottom: 120, left: 140, right: 140 },
               children: fromParas,
             }),
             new TableCell({
               width: { size: HALF_WIDTH, type: WidthType.DXA },
               verticalAlign: VerticalAlign.TOP,
-              margins: { top: 100, bottom: 100, left: 140, right: 140 },
+              margins: { top: 120, bottom: 120, left: 140, right: 140 },
               children: toParas,
             }),
           ]
@@ -418,30 +492,27 @@ function downloadDocx() {
     });
   }
 
-  /* Spacer paragraph between slips */
-  const spacer = () => new Paragraph({ text: '', spacing: { after: 60 } });
+  const spacer = () => new Paragraph({ text: '', spacing: { after: 80 } });
 
   const sections = [];
-  const TOTAL_PAGES = Math.ceil(recipients.length / SLIPS_PER_PAGE);
+  const totalPages = Math.ceil(recipients.length / SLIPS_PER_PAGE);
 
-  for (let p = 0; p < TOTAL_PAGES; p++) {
+  for (let p = 0; p < totalPages; p++) {
     const pageChildren = [];
-    const startIdx = p * SLIPS_PER_PAGE;
-    const pageRecips = recipients.slice(startIdx, startIdx + SLIPS_PER_PAGE);
 
-    pageRecips.forEach((r, i) => {
-      pageChildren.push(makeSlipTable(r));
-      if (i < pageRecips.length - 1) pageChildren.push(spacer());
-    });
+    // Exactly 3 slips per page
+    for (let s = 0; s < SLIPS_PER_PAGE; s++) {
+      const globalIdx = p * SLIPS_PER_PAGE + s;
+      const recipient = globalIdx < recipients.length ? recipients[globalIdx] : null;
 
-    // Fill remaining slip slots with blank tables
-    for (let f = pageRecips.length; f < SLIPS_PER_PAGE; f++) {
-      pageChildren.push(spacer());
-      pageChildren.push(makeSlipTable(null));
+      pageChildren.push(makeSlipTable(recipient));
+      if (s < SLIPS_PER_PAGE - 1) {
+        pageChildren.push(spacer());
+      }
     }
 
-    // Page break after every page except last
-    if (p < TOTAL_PAGES - 1) {
+    // Page break after every page except the last
+    if (p < totalPages - 1) {
       pageChildren.push(new Paragraph({ children: [new PageBreak()] }));
     }
 
@@ -452,7 +523,7 @@ function downloadDocx() {
     sections: [{
       properties: {
         page: {
-          size: { width: A4_WIDTH_DXA, height: 16838 },
+          size: { width: A4_WIDTH_DXA, height: 16838 }, // A4 Portrait (210mm x 297mm)
           margin: { top: MARGIN_DXA, bottom: MARGIN_DXA, left: MARGIN_DXA, right: MARGIN_DXA }
         }
       },
@@ -468,13 +539,13 @@ function downloadDocx() {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   }).catch(err => {
-    console.error('DOCX error:', err);
-    alert('Word export failed. Check the console for details.');
+    console.error('DOCX export error:', err);
+    alert('Word document export failed. Please check the browser console for details.');
   });
 }
 
 /* ══════════════════════════════════════════════════════
-   UTILITY
+   UTILITY HELPERS
    ══════════════════════════════════════════════════════ */
 function esc(str) {
   if (!str) return '';
@@ -491,60 +562,70 @@ function todayStr() {
 }
 
 /* ══════════════════════════════════════════════════════
-   EVENT WIRING
+   EVENT WIRING ON DOM READY
    ══════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ── FROM address ──
+  // ── A. FROM Address controls ──
   document.getElementById('btn-edit-from').addEventListener('click', openFromEdit);
   document.getElementById('btn-save-from').addEventListener('click', saveFromEdit);
   document.getElementById('btn-cancel-from').addEventListener('click', closeFromEdit);
   document.getElementById('btn-reset-from').addEventListener('click', resetFromAddress);
 
-  // Clear error on input
-  ['from-business','from-contact','from-address','from-mobile'].forEach(id =>
-    document.getElementById(id).addEventListener('input', () =>
-      clearError(document.getElementById('from-error'))));
-
-  // ── Add recipient ──
-  document.getElementById('btn-add').addEventListener('click', addRecipient);
-  ['to-name','to-address','to-mobile'].forEach(id =>
-    document.getElementById(id).addEventListener('input', () =>
-      clearError(document.getElementById('add-error'))));
-
-  // Enter key in recipient form fields → add
-  ['to-name','to-mobile'].forEach(id =>
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') addRecipient();
-    }));
-  document.getElementById('to-address').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addRecipient(); }
+  ['from-business','from-contact','from-address','from-mobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => clearError(document.getElementById('from-error')));
   });
 
-  // ── Edit modal ──
+  // ── B. Add Recipient controls ──
+  document.getElementById('btn-add').addEventListener('click', addRecipient);
+
+  ['to-name','to-mobile','to-address'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => clearError(document.getElementById('add-error')));
+  });
+
+  ['to-name','to-mobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addRecipient();
+    });
+  });
+
+  const toAddr = document.getElementById('to-address');
+  if (toAddr) {
+    toAddr.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addRecipient();
+      }
+    });
+  }
+
+  // ── Edit Modal controls ──
   document.getElementById('btn-save-edit').addEventListener('click', saveEditModal);
   document.getElementById('btn-cancel-edit').addEventListener('click', closeEditModal);
-  document.getElementById('edit-modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('edit-modal')) closeEditModal();
-  });
-  ['edit-name','edit-address','edit-mobile'].forEach(id =>
-    document.getElementById(id).addEventListener('input', () =>
-      clearError(document.getElementById('edit-error'))));
 
-  // ── Action buttons ──
-  document.getElementById('btn-preview').addEventListener('click', showPreview);
+  const editModal = document.getElementById('edit-modal');
+  if (editModal) {
+    editModal.addEventListener('click', e => {
+      if (e.target === editModal) closeEditModal();
+    });
+  }
+
+  ['edit-name','edit-mobile','edit-address'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => clearError(document.getElementById('edit-error')));
+  });
+
+  // ── Actions Card buttons (Right Column) ──
+  document.getElementById('btn-preview').addEventListener('click', handleGeneratePreview);
   document.getElementById('btn-print').addEventListener('click', doPrint);
-  document.getElementById('btn-pdf').addEventListener('click', doPrint);     // triggers print-to-PDF
+  document.getElementById('btn-pdf').addEventListener('click', doPrint);
   document.getElementById('btn-docx').addEventListener('click', downloadDocx);
   document.getElementById('btn-clear').addEventListener('click', clearAllRecipients);
 
-  // Preview toolbar buttons
-  document.getElementById('btn-print2').addEventListener('click', doPrint);
-  document.getElementById('btn-pdf2').addEventListener('click', doPrint);
-  document.getElementById('btn-docx2').addEventListener('click', downloadDocx);
-  document.getElementById('btn-close-preview').addEventListener('click', hidePreview);
-
-  // ── Initial render ──
+  // ── Initial Render ──
   renderFromDisplay();
   renderRecipientTable();
 });
