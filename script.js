@@ -17,7 +17,7 @@ const DEFAULT_FROM = {
 
 const LS_FROM_KEY       = 'peppyCollections_fromAddress';
 const LS_RECIPIENTS_KEY = 'peppyCollections_recipients';
-const SLIPS_PER_PAGE    = 3;
+const SLIPS_PER_PAGE    = 4;
 
 let fromAddress  = loadFromAddress();
 let recipients   = loadRecipients();
@@ -146,6 +146,9 @@ function updateSummaryStats() {
 
   const statPages = document.getElementById('stat-pages');
   if (statPages) statPages.textContent = pages;
+
+  const statSlips = document.getElementById('stat-slips-per-page');
+  if (statSlips) statSlips.textContent = SLIPS_PER_PAGE;
 
   const headerBadge = document.getElementById('header-count-text');
   if (headerBadge) headerBadge.textContent = `${total} Recipient${total !== 1 ? 's' : ''}`;
@@ -369,7 +372,7 @@ function buildSlipHTML(toRecipient, slotNum) {
 }
 
 /* ══════════════════════════════════════════════════════
-   BUILD A4 PAGES (STRICT PAGINATION: 3 SLIPS PER A4 PAGE)
+   BUILD A4 PAGES (STRICT PAGINATION: 4 SLIPS PER A4 PAGE)
    ══════════════════════════════════════════════════════ */
 function buildPrintPages() {
   const printArea = document.getElementById('print-area');
@@ -383,10 +386,10 @@ function buildPrintPages() {
   printArea.innerHTML = '';
 
   /* STRICT PAGINATION REQUIREMENT:
-     pageIndex = Math.floor(index / 3)
-     slipIndex = index % 3
-     Each A4 page contains max 3 slips.
-     4th recipient starts on Page 2, 7th on Page 3, 10th on Page 4.
+     pageIndex = Math.floor(index / 4)
+     slipIndex = index % 4
+     Each A4 page contains max 4 slips.
+     5th recipient starts on Page 2, 9th on Page 3, 13th on Page 4.
   */
   const totalPages = Math.ceil(recipients.length / SLIPS_PER_PAGE);
 
@@ -541,18 +544,18 @@ function downloadDocx() {
       },
       rows: [
         new TableRow({
-          height: { value: 1750, rule: HeightRule.ATLEAST },
+          height: { value: 1600, rule: HeightRule.ATLEAST },
           children: [
             new TableCell({
               width: { size: HALF_WIDTH, type: WidthType.DXA },
               verticalAlign: VerticalAlign.TOP,
-              margins: { top: 120, bottom: 120, left: 140, right: 140 },
+              margins: { top: 80, bottom: 80, left: 140, right: 140 },
               children: fromParas,
             }),
             new TableCell({
               width: { size: HALF_WIDTH, type: WidthType.DXA },
               verticalAlign: VerticalAlign.TOP,
-              margins: { top: 120, bottom: 120, left: 140, right: 140 },
+              margins: { top: 80, bottom: 80, left: 140, right: 140 },
               children: toParas,
             }),
           ]
@@ -561,7 +564,7 @@ function downloadDocx() {
     });
   }
 
-  const spacer = () => new Paragraph({ text: '', spacing: { after: 80 } });
+  const spacer = () => new Paragraph({ text: '', spacing: { after: 50 } });
 
   const sections = [];
   const totalPages = Math.ceil(recipients.length / SLIPS_PER_PAGE);
@@ -569,7 +572,7 @@ function downloadDocx() {
   for (let p = 0; p < totalPages; p++) {
     const pageChildren = [];
 
-    // Exactly 3 slips per page
+    // Exactly 4 slips per page
     for (let s = 0; s < SLIPS_PER_PAGE; s++) {
       const globalIdx = p * SLIPS_PER_PAGE + s;
       const recipient = globalIdx < recipients.length ? recipients[globalIdx] : null;
