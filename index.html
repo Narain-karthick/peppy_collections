@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Peppy Collections – Courier Slip Generator</title>
+  <title>Peppy Collections – Courier Management &amp; Slip Printing</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- docx.js for Word export -->
+  <!-- docx.js for genuine Word export -->
   <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 </head>
 <body>
 
   <!-- ═══════════════════════════════════════
-       HEADER
+       HEADER (BLUE GRADIENT WITH SHIPPING ICON)
   ════════════════════════════════════════ -->
   <header class="site-header no-print">
     <div class="header-inner">
-      <div class="header-logo">📦</div>
+      <div class="header-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      </div>
       <div class="header-text">
         <h1>Peppy Collections – Courier Slip Generator</h1>
         <p class="subtitle">Easy Address Entry &amp; Printing</p>
@@ -24,20 +30,89 @@
   </header>
 
   <!-- ═══════════════════════════════════════
+       SUMMARY STATS BAR
+  ════════════════════════════════════════ -->
+  <section class="summary-section no-print">
+    <div class="summary-inner">
+      <div class="stat-card">
+        <div class="stat-icon-wrap stat-blue">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Recipients</span>
+          <span class="stat-value" id="stat-recipients">0</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrap stat-indigo">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total A4 Pages</span>
+          <span class="stat-value" id="stat-pages">0</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrap stat-emerald">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="3" y1="15" x2="21" y2="15"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Slips Per Page</span>
+          <span class="stat-value" id="stat-slips-per-page">3</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
        MAIN TWO-COLUMN DASHBOARD
   ════════════════════════════════════════ -->
   <main class="dashboard">
 
-    <!-- ─── LEFT COLUMN – 40% WIDTH (ENTRY SECTION) ─── -->
+    <!-- ─── LEFT COLUMN – 40% (ENTRY & MANAGEMENT) ─── -->
     <div class="left-col no-print">
 
-      <!-- 1. Default FROM Address -->
+      <!-- A. SENDER ADDRESS CARD -->
       <section class="card" id="from-card">
         <div class="card-header">
-          <h2>📍 Default FROM Address</h2>
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <h2>Sender Address (FROM)</h2>
+          </div>
           <div class="card-header-actions">
-            <button class="btn btn-secondary btn-sm" id="btn-edit-from">✏️ Edit Address</button>
-            <button class="btn btn-ghost btn-sm" id="btn-reset-from" title="Reset to factory default">↩ Reset</button>
+            <button class="btn btn-secondary btn-sm" id="btn-edit-from" title="Edit sender address">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span>Edit</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="btn-reset-from" title="Reset to default address">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
           </div>
         </div>
 
@@ -51,14 +126,14 @@
           <div class="form-grid">
             <div class="field">
               <label for="from-business">Business / Sender Name <span class="req">*</span></label>
-              <input type="text" id="from-business" placeholder="e.g. Peppy Collections" />
+              <input type="text" id="from-business" placeholder="e.g. Peppy Collections" autocomplete="organization" />
             </div>
             <div class="field">
               <label for="from-contact">Contact Person <span class="req">*</span></label>
-              <input type="text" id="from-contact" placeholder="e.g. Yamini Mamallan" />
+              <input type="text" id="from-contact" placeholder="e.g. Yamini Mamallan" autocomplete="name" />
             </div>
             <div class="field full">
-              <label for="from-address">Address <span class="req">*</span></label>
+              <label for="from-address">Complete Address <span class="req">*</span></label>
               <textarea id="from-address" rows="2" placeholder="e.g. Ponneri – 601204"></textarea>
             </div>
             <div class="field full">
@@ -67,58 +142,105 @@
             </div>
           </div>
           <div class="from-edit-actions">
-            <button class="btn btn-primary" id="btn-save-from">💾 Save Default Address</button>
-            <button class="btn btn-ghost" id="btn-cancel-from">✕ Cancel</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-from">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              <span>Save Default</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="btn-cancel-from">Cancel</button>
           </div>
           <div id="from-error" class="error-msg hidden"></div>
         </div>
       </section>
 
-      <!-- 2. Add Recipient Address -->
+      <!-- B. ADD RECIPIENT FORM (2 FIELDS: Name & Address + Mobile) -->
       <section class="card" id="add-card">
         <div class="card-header">
-          <h2>➕ Add Recipient Address</h2>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label for="to-name">Recipient Name <span class="req">*</span></label>
-            <input type="text" id="to-name" placeholder="Full name of recipient" />
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <line x1="19" y1="8" x2="19" y2="14"></line>
+              <line x1="22" y1="11" x2="16" y2="11"></line>
+            </svg>
+            <h2>Add Recipient (TO)</h2>
           </div>
-          <div class="field">
-            <label for="to-mobile">Mobile Number <span class="req">*</span></label>
-            <input type="tel" id="to-mobile" placeholder="10-digit mobile number" maxlength="10" />
+        </div>
+
+        <div class="form-vertical">
+          <div class="field full">
+            <label for="to-name-address">Name &amp; Address <span class="req">*</span></label>
+            <textarea id="to-name-address" rows="6" placeholder="Enter recipient name on the first line, followed by the complete address..."></textarea>
+            <span class="field-hint">First line = Recipient Name &bull; Remaining lines = Address</span>
           </div>
           <div class="field full">
-            <label for="to-address">Address <span class="req">*</span></label>
-            <textarea id="to-address" rows="2" placeholder="Complete delivery address with pincode"></textarea>
+            <label for="to-mobile">Mobile Number <span class="req">*</span></label>
+            <input type="tel" id="to-mobile" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel" />
           </div>
         </div>
         <div id="add-error" class="error-msg hidden"></div>
         <div class="add-actions">
-          <button class="btn btn-primary" id="btn-add">✚ Add Address</button>
+          <button class="btn btn-primary btn-add-prominent" id="btn-add">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Add Recipient</span>
+          </button>
         </div>
       </section>
 
-      <!-- 3. Recipient List -->
+      <!-- C. RECIPIENT MANAGEMENT TABLE -->
       <section class="card" id="list-card">
-        <div class="card-header">
-          <h2>📋 Recipient List</h2>
-          <span class="badge" id="recipient-count">0 recipients</span>
+        <div class="card-header flex-column-sm">
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <h2>Recipient Directory</h2>
+            <span class="badge" id="recipient-count">0 recipients</span>
+          </div>
+
+          <!-- Live Search Bar -->
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="recipient-search" class="search-input" placeholder="Search name or mobile..." autocomplete="off" />
+          </div>
         </div>
+
         <div class="table-wrap">
           <table id="recipient-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Recipient Name</th>
-                <th>Address</th>
-                <th>Mobile</th>
-                <th>Actions</th>
+                <th class="th-num">#</th>
+                <th class="th-name">Recipient Name</th>
+                <th class="th-addr">Delivery Address</th>
+                <th class="th-mobile">Mobile</th>
+                <th class="th-actions">Actions</th>
               </tr>
             </thead>
             <tbody id="recipient-tbody">
               <tr id="empty-row">
-                <td colspan="5" class="empty-state">No recipients added yet. Use the form above to add addresses.</td>
+                <td colspan="5" class="empty-state">
+                  <div class="empty-state-inner">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                    <span>No recipients added yet. Use the form above to add addresses.</span>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -127,29 +249,104 @@
 
     </div><!-- /.left-col -->
 
-    <!-- ─── RIGHT COLUMN – 60% WIDTH (PREVIEW AND ACTIONS) ─── -->
+    <!-- ─── RIGHT COLUMN – 60% (PREVIEW & ACTIONS) ─── -->
     <div class="right-col">
 
-      <!-- 1. Actions -->
+      <!-- A. QUICK ACTIONS TOOLBAR -->
       <section class="card action-card no-print" id="action-card">
         <div class="card-header">
-          <h2>⚙️ Actions</h2>
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <h2>Actions &amp; Export</h2>
+          </div>
         </div>
         <div class="action-buttons">
-          <button class="btn btn-primary btn-action" id="btn-preview">👁 Generate Preview</button>
-          <button class="btn btn-success btn-action" id="btn-print">🖨️ Print</button>
-          <button class="btn btn-info btn-action" id="btn-pdf">📄 Download PDF</button>
-          <button class="btn btn-warning btn-action" id="btn-docx">📝 Download Word (.docx)</button>
-          <button class="btn btn-danger btn-action" id="btn-clear">🗑️ Clear All Recipients</button>
+          <!-- Prominent Print Button -->
+          <button class="btn btn-print-prominent btn-action" id="btn-print" title="Print all courier slips directly">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            <span>Print All</span>
+          </button>
+
+          <!-- Download PDF -->
+          <button class="btn btn-secondary btn-action" id="btn-pdf" title="Download slips as PDF via browser print">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Download PDF</span>
+          </button>
+
+          <!-- Download Word (.docx) -->
+          <button class="btn btn-secondary btn-action" id="btn-docx" title="Export editable Word document">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M9 13l2 4 2-4 2 4"></path>
+            </svg>
+            <span>Download Word</span>
+          </button>
+
+          <!-- Generate/Refresh Preview -->
+          <button class="btn btn-secondary btn-action" id="btn-preview" title="Refresh the A4 preview below">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Preview</span>
+          </button>
+
+          <!-- Clear All -->
+          <button class="btn btn-danger-subtle btn-action" id="btn-clear" title="Clear all recipient entries">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Clear All</span>
+          </button>
         </div>
       </section>
 
-      <!-- 2. Courier Slip Preview -->
+      <!-- B. LIVE A4 PREVIEW PANEL -->
       <section class="card preview-card" id="preview-card">
         <div class="card-header preview-card-header no-print">
-          <h2>🖨️ Courier Slip Preview</h2>
-          <div class="preview-header-info">
-            <span class="badge" id="preview-page-indicator">0 Pages</span>
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+              <line x1="8" y1="6" x2="16" y2="6"></line>
+              <line x1="8" y1="10" x2="16" y2="10"></line>
+            </svg>
+            <h2>Live A4 Preview</h2>
+            <span class="badge badge-info" id="preview-page-indicator">0 Pages</span>
+          </div>
+
+          <!-- Preview Zoom Controls -->
+          <div class="zoom-controls">
+            <button class="btn-zoom" id="btn-zoom-out" title="Zoom Out">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </button>
+            <span class="zoom-label" id="zoom-level-label">100%</span>
+            <button class="btn-zoom" id="btn-zoom-in" title="Zoom In">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </button>
+            <button class="btn-zoom-reset" id="btn-zoom-reset" title="Reset to 100%">Reset</button>
           </div>
         </div>
 
@@ -157,9 +354,15 @@
           <!-- A4 pages injected here by JS -->
           <div id="print-area">
             <div class="preview-placeholder" id="preview-placeholder">
-              <div class="placeholder-icon">📄</div>
-              <h3>No Preview Generated Yet</h3>
-              <p>Add recipient addresses on the left, then click <strong>Generate Preview</strong> to see the A4 slips.</p>
+              <div class="placeholder-icon-wrap">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              </div>
+              <h3>No recipients added yet</h3>
+              <p>Add recipient details on the left to generate your courier slips.</p>
             </div>
           </div>
         </div>
@@ -172,27 +375,38 @@
   <!-- ═══════════════════════════════════════
        INLINE EDIT MODAL
   ════════════════════════════════════════ -->
-  <div id="edit-modal" class="modal-overlay hidden no-print">
+  <div id="edit-modal" class="modal-overlay hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-box">
-      <h3>Edit Recipient</h3>
-      <div class="form-grid">
-        <div class="field">
-          <label for="edit-name">Recipient Name <span class="req">*</span></label>
-          <input type="text" id="edit-name" />
+      <div class="modal-header">
+        <div class="card-title-group">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <h3 id="modal-title">Edit Recipient</h3>
         </div>
-        <div class="field">
-          <label for="edit-mobile">Mobile Number <span class="req">*</span></label>
-          <input type="tel" id="edit-mobile" maxlength="10" />
-        </div>
-        <div class="field full">
-          <label for="edit-address">Address <span class="req">*</span></label>
-          <textarea id="edit-address" rows="2"></textarea>
-        </div>
+        <button class="modal-close" id="btn-close-modal" aria-label="Close dialog">&times;</button>
       </div>
-      <div id="edit-error" class="error-msg hidden"></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="edit-name">Recipient Name <span class="req">*</span></label>
+            <input type="text" id="edit-name" />
+          </div>
+          <div class="field">
+            <label for="edit-mobile">Mobile Number <span class="req">*</span></label>
+            <input type="tel" id="edit-mobile" maxlength="10" />
+          </div>
+          <div class="field full">
+            <label for="edit-address">Delivery Address <span class="req">*</span></label>
+            <textarea id="edit-address" rows="3"></textarea>
+          </div>
+        </div>
+        <div id="edit-error" class="error-msg hidden"></div>
+      </div>
       <div class="modal-actions">
-        <button class="btn btn-primary" id="btn-save-edit">💾 Save Changes</button>
-        <button class="btn btn-ghost"   id="btn-cancel-edit">✕ Cancel</button>
+        <button class="btn btn-primary btn-sm" id="btn-save-edit">Save Changes</button>
+        <button class="btn btn-ghost btn-sm" id="btn-cancel-edit">Cancel</button>
       </div>
     </div>
   </div>

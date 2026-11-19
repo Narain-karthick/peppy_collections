@@ -135,27 +135,71 @@ function resetFromAddress() {
 }
 
 /* ══════════════════════════════════════════════════════
-   RECIPIENT TABLE
+   DASHBOARD STATS & RECIPIENT DIRECTORY
    ══════════════════════════════════════════════════════ */
+function updateSummaryStats() {
+  const total = recipients.length;
+  const pages = Math.ceil(total / SLIPS_PER_PAGE) || 0;
+
+  const statRecipients = document.getElementById('stat-recipients');
+  if (statRecipients) statRecipients.textContent = total;
+
+  const statPages = document.getElementById('stat-pages');
+  if (statPages) statPages.textContent = pages;
+
+  const headerBadge = document.getElementById('header-count-text');
+  if (headerBadge) headerBadge.textContent = `${total} Recipient${total !== 1 ? 's' : ''}`;
+
+  const tableTotal = document.getElementById('table-total-count');
+  if (tableTotal) tableTotal.textContent = total;
+
+  const countEl = document.getElementById('recipient-count');
+  if (countEl) countEl.textContent = `${total} recipient${total !== 1 ? 's' : ''}`;
+}
+
 function renderRecipientTable() {
-  const tbody    = document.getElementById('recipient-tbody');
-  const countEl  = document.getElementById('recipient-count');
-  const emptyRow = document.getElementById('empty-row');
+  updateSummaryStats();
+
+  const tbody       = document.getElementById('recipient-tbody');
+  const emptyRow    = document.getElementById('empty-row');
+  const searchInput = document.getElementById('recipient-search');
+  const query       = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
   // Remove existing rendered rows
   [...tbody.querySelectorAll('tr:not(#empty-row)')].forEach(r => r.remove());
 
   if (recipients.length === 0) {
-    emptyRow.classList.remove('hidden');
-    countEl.textContent = '0 recipients';
+    if (emptyRow) emptyRow.classList.remove('hidden');
     renderEmptyPreview();
     return;
   }
 
-  emptyRow.classList.add('hidden');
-  countEl.textContent = `${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`;
+  if (emptyRow) emptyRow.classList.add('hidden');
 
-  recipients.forEach((r, i) => {
+  // Filter based on query if present
+  const filtered = query
+    ? recipients.map((r, i) => ({ recipient: r, originalIndex: i }))
+                .filter(({ recipient: r }) =>
+                  r.name.toLowerCase().includes(query) ||
+                  r.mobile.toLowerCase().includes(query) ||
+                  r.address.toLowerCase().includes(query)
+                )
+    : recipients.map((r, i) => ({ recipient: r, originalIndex: i }));
+
+  if (filtered.length === 0) {
+    const tr = document.createElement('tr');
+    tr.className = 'no-search-results';
+    tr.innerHTML = `
+      <td colspan="5" style="text-align: center; padding: 24px 16px; color: var(--slate-500); font-size: 0.84rem;">
+        🔍 No recipients match "<strong>${esc(query)}</strong>"
+      </td>
+    `;
+    tbody.appendChild(tr);
+    buildPrintPages();
+    return;
+  }
+
+  filtered.forEach(({ recipient: r, originalIndex: i }) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i + 1}</td>
@@ -181,29 +225,58 @@ function renderRecipientTable() {
 }
 
 /* ══════════════════════════════════════════════════════
-   ADD RECIPIENT
+   ADD RECIPIENT (COMBINED NAME & ADDRESS + MOBILE)
    ══════════════════════════════════════════════════════ */
 function addRecipient() {
-  const errEl   = document.getElementById('add-error');
-  const name    = document.getElementById('to-name').value.trim();
-  const address = document.getElementById('to-address').value.trim();
-  const mobile  = document.getElementById('to-mobile').value.trim();
+  const errEl         = document.getElementById('add-error');
+  const nameAddrInput = document.getElementById('to-name-address');
+  const mobileInput   = document.getElementById('to-mobile');
 
-  if (!name)    return showError(errEl, 'Recipient Name is required.');
-  if (!mobile)  return showError(errEl, 'Mobile Number is required.');
-  if (!isValidMobile(mobile)) return showError(errEl, 'Enter a valid 10-digit Indian mobile number starting with 6-9.');
-  if (!address) return showError(errEl, 'Address is required.');
+  const rawText = nameAddrInput ? nameAddrInput.value : '';
+  const mobile  = mobileInput ? mobileInput.value.trim() : '';
+
+  // Parse lines: first non-empty line = Recipient Name; remaining lines = Address
+  const lines = rawText.split('\n');
+  let name = '';
+  let nameLineIndex = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed) {
+      name = trimmed;
+      nameLineIndex = i;
+      break;
+    }
+  }
+
+  let address = '';
+  if (nameLineIndex !== -1 && nameLineIndex + 1 < lines.length) {
+    address = lines.slice(nameLineIndex + 1).join('\n').trim();
+  }
+
+  // Validation
+  if (!name) {
+    return showError(errEl, 'Please enter the recipient name on the first line.');
+  }
+  if (!address) {
+    return showError(errEl, 'Please enter the delivery address on the lines following the name.');
+  }
+  if (!mobile) {
+    return showError(errEl, 'Mobile Number is required.');
+  }
+  if (!isValidMobile(mobile)) {
+    return showError(errEl, 'Enter a valid 10-digit Indian mobile number starting with 6-9.');
+  }
 
   clearError(errEl);
   recipients.push({ name, address, mobile });
   saveRecipients();
   renderRecipientTable();
 
-  // Clear inputs
-  document.getElementById('to-name').value    = '';
-  document.getElementById('to-address').value = '';
-  document.getElementById('to-mobile').value  = '';
-  document.getElementById('to-name').focus();
+  // Clear inputs and refocus
+  if (nameAddrInput) nameAddrInput.value = '';
+  if (mobileInput) mobileInput.value = '';
+  if (nameAddrInput) nameAddrInput.focus();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -266,9 +339,21 @@ function clearAllRecipients() {
 /* ══════════════════════════════════════════════════════
    SLIP HTML BUILDER
    ══════════════════════════════════════════════════════ */
-function buildSlipHTML(toRecipient) {
+function buildSlipHTML(toRecipient, slotNum) {
+  const toContent = toRecipient ? `
+    <div class="slip-label">TO</div>
+    <div class="slip-business">${esc(toRecipient.name)}</div>
+    <div class="slip-addr">${esc(toRecipient.address)}</div>
+    <div class="slip-mobile">📱 ${esc(toRecipient.mobile)}</div>
+  ` : `
+    <div class="slip-label">TO</div>
+    <div class="slip-business empty-slot-text" style="color: #94a3b8; font-weight: 500; font-size: 10pt; font-style: italic;">(Empty Slip ${slotNum || ''})</div>
+    <div class="slip-addr"></div>
+    <div class="slip-mobile"></div>
+  `;
+
   return `
-    <div class="slip">
+    <div class="slip${!toRecipient ? ' slip-empty-slot' : ''}">
       <div class="slip-half slip-from">
         <div class="slip-label">FROM</div>
         <div class="slip-business">${esc(fromAddress.business)}</div>
@@ -277,19 +362,8 @@ function buildSlipHTML(toRecipient) {
         <div class="slip-mobile">📱 ${esc(fromAddress.mobile)}</div>
       </div>
       <div class="slip-half slip-to">
-        <div class="slip-label">TO</div>
-        <div class="slip-business">${esc(toRecipient.name)}</div>
-        <div class="slip-addr">${esc(toRecipient.address)}</div>
-        <div class="slip-mobile">📱 ${esc(toRecipient.mobile)}</div>
+        ${toContent}
       </div>
-    </div>
-  `;
-}
-
-function buildEmptySlipHTML(slotNum) {
-  return `
-    <div class="slip slip-empty">
-      <div class="empty-slip-content">(Empty Slip ${slotNum})</div>
     </div>
   `;
 }
@@ -351,12 +425,7 @@ function buildPrintPages() {
     // Exactly 3 slips per page
     for (let s = 0; s < SLIPS_PER_PAGE; s++) {
       const recipient = pageMap[p] && pageMap[p][s];
-      if (recipient) {
-        slipsContainer.insertAdjacentHTML('beforeend', buildSlipHTML(recipient));
-      } else {
-        // Blank filler slip on partial page (maintains strict 1/3 height proportions)
-        slipsContainer.insertAdjacentHTML('beforeend', buildEmptySlipHTML(s + 1));
-      }
+      slipsContainer.insertAdjacentHTML('beforeend', buildSlipHTML(recipient, s + 1));
     }
 
     pageDiv.appendChild(slipsContainer);
@@ -562,6 +631,27 @@ function todayStr() {
 }
 
 /* ══════════════════════════════════════════════════════
+   PREVIEW ZOOM CONTROLS
+   ══════════════════════════════════════════════════════ */
+let zoomLevel = 1.0;
+const MIN_ZOOM = 0.7;
+const MAX_ZOOM = 1.4;
+const ZOOM_STEP = 0.1;
+
+function applyZoom(level) {
+  zoomLevel = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(level * 10) / 10));
+  const printArea = document.getElementById('print-area');
+  const zoomLabel = document.getElementById('zoom-level-label');
+  if (printArea) {
+    printArea.style.transform = `scale(${zoomLevel})`;
+    printArea.style.transformOrigin = 'top center';
+  }
+  if (zoomLabel) {
+    zoomLabel.textContent = `${Math.round(zoomLevel * 100)}%`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
    EVENT WIRING ON DOM READY
    ══════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -577,34 +667,56 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', () => clearError(document.getElementById('from-error')));
   });
 
-  // ── B. Add Recipient controls ──
+  // ── B. Add Recipient controls & Keyboard Navigation ──
   document.getElementById('btn-add').addEventListener('click', addRecipient);
 
-  ['to-name','to-mobile','to-address'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', () => clearError(document.getElementById('add-error')));
-  });
+  const toNameAddress = document.getElementById('to-name-address');
+  const toMobile      = document.getElementById('to-mobile');
 
-  ['to-name','to-mobile'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', e => {
-      if (e.key === 'Enter') addRecipient();
-    });
-  });
-
-  const toAddr = document.getElementById('to-address');
-  if (toAddr) {
-    toAddr.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+  if (toNameAddress) {
+    toNameAddress.addEventListener('input', () => clearError(document.getElementById('add-error')));
+    toNameAddress.addEventListener('keydown', e => {
+      // Allow Ctrl+Enter or Cmd+Enter to submit directly from the textarea
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         addRecipient();
       }
     });
   }
 
-  // ── Edit Modal controls ──
+  if (toMobile) {
+    toMobile.addEventListener('input', () => clearError(document.getElementById('add-error')));
+    toMobile.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addRecipient();
+      }
+    });
+  }
+
+  // ── C. Search in Recipient Directory ──
+  const searchInput = document.getElementById('recipient-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => renderRecipientTable());
+  }
+
+  // ── D. Zoom Controls for Preview ──
+  const btnZoomIn    = document.getElementById('btn-zoom-in');
+  const btnZoomOut   = document.getElementById('btn-zoom-out');
+  const btnZoomReset = document.getElementById('btn-zoom-reset');
+
+  if (btnZoomIn)    btnZoomIn.addEventListener('click', () => applyZoom(zoomLevel + ZOOM_STEP));
+  if (btnZoomOut)   btnZoomOut.addEventListener('click', () => applyZoom(zoomLevel - ZOOM_STEP));
+  if (btnZoomReset) btnZoomReset.addEventListener('click', () => applyZoom(1.0));
+
+  // ── E. Edit Modal controls ──
   document.getElementById('btn-save-edit').addEventListener('click', saveEditModal);
   document.getElementById('btn-cancel-edit').addEventListener('click', closeEditModal);
+
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  if (btnCloseModal) {
+    btnCloseModal.addEventListener('click', closeEditModal);
+  }
 
   const editModal = document.getElementById('edit-modal');
   if (editModal) {
@@ -618,7 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', () => clearError(document.getElementById('edit-error')));
   });
 
-  // ── Actions Card buttons (Right Column) ──
+  // ── F. Actions Card buttons (Right Column) ──
   document.getElementById('btn-preview').addEventListener('click', handleGeneratePreview);
   document.getElementById('btn-print').addEventListener('click', doPrint);
   document.getElementById('btn-pdf').addEventListener('click', doPrint);
@@ -628,4 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Initial Render ──
   renderFromDisplay();
   renderRecipientTable();
+
+  // Auto-focus first input field for rapid workflow
+  if (toNameAddress) toNameAddress.focus();
 });
